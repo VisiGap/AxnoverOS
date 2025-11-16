@@ -1,6 +1,4 @@
-use crate::process::{self, Pid};
-use x86_64::registers::model_specific::{LStar, SFMask, Star};
-use x86_64::registers::rflags::RFlags;
+use crate::process;
 use x86_64::VirtAddr;
 
 /// System call numbers
@@ -173,7 +171,14 @@ pub fn init() {
         // Set segment selectors for SYSCALL/SYSRET
         // STAR[47:32] = Kernel CS (0x08)
         // STAR[63:48] = User CS (0x18)
-        Star::write(0x0008, 0x0010, 0x0018, 0x0020).unwrap();
+        use x86_64::registers::segmentation::SegmentSelector;
+        Star::write(
+            SegmentSelector(0x0008),
+            SegmentSelector(0x0010),
+            SegmentSelector(0x0018),
+            SegmentSelector(0x0020),
+        )
+        .unwrap();
 
         // Set RFLAGS mask (clear IF and TF on syscall)
         SFMask::write(RFlags::INTERRUPT_FLAG | RFlags::TRAP_FLAG);
@@ -184,10 +189,10 @@ pub fn init() {
 }
 
 /// Low-level syscall entry point
-#[naked]
+#[unsafe(naked)]
 extern "C" fn syscall_entry() {
     unsafe {
-        core::arch::asm!(
+        core::arch::naked_asm!(
             // Save user stack
             "mov [gs:0x00], rsp",
             // Load kernel stack

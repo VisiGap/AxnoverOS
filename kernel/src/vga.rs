@@ -1,6 +1,7 @@
 use core::fmt;
 use lazy_static::lazy_static;
 use spin::Mutex;
+use volatile::access::ReadWrite;
 use volatile::Volatile;
 
 #[allow(dead_code)]
@@ -47,7 +48,7 @@ const BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
 struct Buffer {
-    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
+    chars: [[Volatile<ScreenChar, ReadWrite>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
 pub struct Writer {

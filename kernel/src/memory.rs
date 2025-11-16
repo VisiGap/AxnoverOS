@@ -1,4 +1,3 @@
-use spin::Mutex;
 use x86_64::{
     structures::paging::{
         mapper::MapToError, FrameAllocator, Mapper, OffsetPageTable, Page, PageTable,
@@ -39,7 +38,7 @@ pub struct PhysicalMemoryManager {
 impl PhysicalMemoryManager {
     /// Create a new physical memory manager
     pub unsafe fn new(memory_start: PhysAddr, memory_end: PhysAddr, bitmap_addr: VirtAddr) -> Self {
-        let total_frames = ((memory_end - memory_start).as_u64() / 4096) as usize;
+        let total_frames = ((memory_end.as_u64() - memory_start.as_u64()) / 4096) as usize;
         let bitmap_size = (total_frames + 63) / 64;
 
         let bitmap = core::slice::from_raw_parts_mut(bitmap_addr.as_mut_ptr::<u64>(), bitmap_size);
@@ -59,7 +58,7 @@ impl PhysicalMemoryManager {
 
     /// Allocate a physical frame
     pub fn allocate_frame(&mut self) -> Option<PhysFrame> {
-        let frame_count = ((self.memory_end - self.memory_start).as_u64() / 4096) as usize;
+        let frame_count = ((self.memory_end.as_u64() - self.memory_start.as_u64()) / 4096) as usize;
 
         for i in 0..frame_count {
             let bitmap_index = i / 64;
@@ -80,7 +79,7 @@ impl PhysicalMemoryManager {
     /// Free a physical frame
     pub fn free_frame(&mut self, frame: PhysFrame) {
         let frame_addr = frame.start_address();
-        let frame_index = ((frame_addr - self.memory_start).as_u64() / 4096) as usize;
+        let frame_index = ((frame_addr.as_u64() - self.memory_start.as_u64()) / 4096) as usize;
 
         let bitmap_index = frame_index / 64;
         let bit_index = frame_index % 64;
@@ -90,7 +89,7 @@ impl PhysicalMemoryManager {
 
     /// Get total memory in bytes
     pub fn total_memory(&self) -> u64 {
-        (self.memory_end - self.memory_start).as_u64()
+        self.memory_end.as_u64() - self.memory_start.as_u64()
     }
 
     /// Get used memory in bytes

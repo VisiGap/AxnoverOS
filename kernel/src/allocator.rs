@@ -1,5 +1,5 @@
 use alloc::alloc::{GlobalAlloc, Layout};
-use core::ptr::{self, null_mut};
+use core::ptr::null_mut;
 use spin::Mutex;
 use x86_64::{
     structures::paging::{
@@ -75,13 +75,14 @@ impl LinkedListAllocator {
 unsafe impl GlobalAlloc for LinkedListAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let mut head = self.head.lock();
-        let mut current = head.as_deref_mut();
-        let mut prev: Option<&mut Node> = None;
+        let mut current_ptr = head.as_deref_mut().map(|n| n as *mut Node);
+        let mut prev_ptr: Option<*mut Node> = None;
 
-        while let Some(region) = current {
+        while let Some(region_ptr) = current_ptr {
+            let region = &mut *region_ptr;
+
             if let Some((alloc_start, _)) = Self::alloc_from_region(region, layout) {
                 let alloc_end = alloc_start as usize + layout.size();
-                let region_ptr = region as *mut Node;
                 let region_start = region_ptr as usize;
                 let region_end = region_start + region.size;
 
@@ -90,14 +91,14 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
                     new_node.size = region_end - alloc_end;
                     new_node.next = region.next.take();
 
-                    if let Some(prev) = prev {
-                        prev.next = Some(new_node);
+                    if let Some(prev) = prev_ptr {
+                        (*prev).next = Some(new_node);
                     } else {
                         *head = Some(new_node);
                     }
                 } else {
-                    if let Some(prev) = prev {
-                        prev.next = region.next.take();
+                    if let Some(prev) = prev_ptr {
+                        (*prev).next = region.next.take();
                     } else {
                         *head = region.next.take();
                     }
@@ -106,8 +107,8 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
                 return alloc_start;
             }
 
-            prev = Some(region);
-            current = region.next.as_deref_mut();
+            prev_ptr = Some(region_ptr);
+            current_ptr = region.next.as_deref_mut().map(|n| n as *mut Node);
         }
 
         null_mut()
