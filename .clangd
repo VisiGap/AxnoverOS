@@ -1,3 +1,19 @@
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: Strict
+  Suppress:
+    - drv_argument_not_allowed_with
+  
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+
+---
+
+If:
+  PathMatch: .*\.cpp$
+
 CompileFlags:
   Add:
     - -std=c++20
@@ -9,11 +25,15 @@ CompileFlags:
   Remove:
     - -stdlib=*
 
-Diagnostics:
-  UnusedIncludes: None
-  MissingIncludes: Strict
-  
-InlayHints:
-  Enabled: Yes
-  ParameterNames: Yes
-  DeducedTypes: Yes
+---
+
+If:
+  PathMatch: .*\.c$
+
+CompileFlags:
+  Add:
+    - -std=c11
+    - -ffreestanding
+    - -nostdlib
+  Remove:
+    - -stdlib=*

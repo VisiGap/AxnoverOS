@@ -1,93 +1,88 @@
-; FractureOS Bootloader
-; Simple bootloader for x86_64
+; FractureOS Stage 1 Bootloader
+; BIOS Boot Sector - loads Stage 2
+; Author: FractureOS Team
 
 [BITS 16]
 [ORG 0x7C00]
 
+KERNEL_OFFSET equ 0x1000
+STAGE2_OFFSET equ 0x7E00
+
 start:
+    ; Initialize segments
     cli
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
+    sti
     
-    ; Load kernel
-    mov si, msg_loading
+    ; Save boot drive
+    mov [boot_drive], dl
+    
+    ; Print boot message
+    mov si, msg_boot
     call print_string
     
-    ; Enable A20 line
-    call enable_a20
+    ; Load stage 2
+    mov si, msg_loading_stage2
+    call print_string
+    call load_stage2
     
-    ; Load GDT
-    lgdt [gdt_descriptor]
-    
-    ; Enter protected mode
-    mov eax, cr0
-    or eax, 1
-    mov cr0, eax
-    
-    jmp CODE_SEG:protected_mode
+    ; Jump to stage 2
+    jmp STAGE2_OFFSET
 
-enable_a20:
-    in al, 0x92
-    or al, 2
-    out 0x92, al
+;===========================================
+; Load Stage 2 from disk
+;===========================================
+load_stage2:
+    mov ah, 0x02        ; Read sectors
+    mov al, 4           ; Number of sectors to read
+    mov ch, 0           ; Cylinder 0
+    mov cl, 2           ; Sector 2 (after boot sector)
+    mov dh, 0           ; Head 0
+    mov dl, [boot_drive]
+    mov bx, STAGE2_OFFSET
+    int 0x13
+    
+    jc disk_error
+    
+    mov si, msg_ok
+    call print_string
     ret
 
+disk_error:
+    mov si, msg_disk_error
+    call print_string
+    jmp $
+
+;===========================================
+; Print string (SI = string pointer)
+;===========================================
 print_string:
+    pusha
+.loop:
     lodsb
     or al, al
     jz .done
     mov ah, 0x0E
+    mov bh, 0
     int 0x10
-    jmp print_string
+    jmp .loop
 .done:
+    popa
     ret
 
-[BITS 32]
-protected_mode:
-    mov ax, DATA_SEG
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-    mov esp, 0x90000
-    
-    ; Jump to kernel
-    jmp 0x100000
+;===========================================
+; Data
+;===========================================
+boot_drive:     db 0
+msg_boot:       db 'FractureOS Bootloader v1.0', 13, 10, 0
+msg_loading_stage2: db 'Loading Stage 2...', 0
+msg_ok:         db ' [OK]', 13, 10, 0
+msg_disk_error: db ' [DISK ERROR]', 13, 10, 0
 
-msg_loading: db 'Loading FractureOS...', 13, 10, 0
-
-; GDT
-gdt_start:
-    dq 0x0
-
-gdt_code:
-    dw 0xFFFF
-    dw 0x0
-    db 0x0
-    db 10011010b
-    db 11001111b
-    db 0x0
-
-gdt_data:
-    dw 0xFFFF
-    dw 0x0
-    db 0x0
-    db 10010010b
-    db 11001111b
-    db 0x0
-
-gdt_end:
-
-gdt_descriptor:
-    dw gdt_end - gdt_start - 1
-    dd gdt_start
-
-CODE_SEG equ gdt_code - gdt_start
-DATA_SEG equ gdt_data - gdt_start
-
+; Boot signature
 times 510-($-$$) db 0
 dw 0xAA55

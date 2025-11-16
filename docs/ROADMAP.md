@@ -6,17 +6,17 @@
 - [x] Interrupt handling
 - [x] VGA text mode output
 - [x] Serial port communication
-- [ ] Physical memory manager
-- [ ] Virtual memory manager
-- [ ] Heap allocator
-- [ ] Basic process management
+- [x] Physical memory manager ✅
+- [x] Virtual memory manager ✅
+- [x] Heap allocator ✅
+- [x] Basic process management ✅
 
-## Phase 2: System Calls & IPC
-- [ ] System call interface
-- [ ] Process creation (fork/exec)
-- [ ] Message-passing IPC
-- [ ] Shared memory
-- [ ] Signals
+## Phase 2: System Calls & IPC ✅
+- [x] System call interface ✅
+- [x] Process creation (fork/exec) ✅
+- [x] Message-passing IPC ✅
+- [x] Shared memory ✅
+- [x] Signals ✅
 
 ## Phase 3: Userspace Foundation
 - [ ] Init process
