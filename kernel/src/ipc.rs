@@ -1,7 +1,7 @@
+use crate::process::Pid;
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 use spin::Mutex;
-use crate::process::Pid;
 
 /// Maximum message size (4KB)
 pub const MAX_MESSAGE_SIZE: usize = 4096;
@@ -74,9 +74,7 @@ pub struct IpcManager {
 
 impl IpcManager {
     pub const fn new() -> Self {
-        Self {
-            queues: Vec::new(),
-        }
+        Self { queues: Vec::new() }
     }
 
     /// Register a process for IPC
@@ -163,12 +161,7 @@ pub fn send_message(sender: Pid, receiver: Pid, data: &[u8]) -> Result<(), IpcEr
         return Err(IpcError::MessageTooLarge);
     }
 
-    let msg = Message::new(
-        sender,
-        receiver,
-        data.to_vec(),
-        MessageType::Data,
-    );
+    let msg = Message::new(sender, receiver, data.to_vec(), MessageType::Data);
 
     IPC_MANAGER.lock().send(msg)
 }

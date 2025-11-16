@@ -178,7 +178,7 @@ pub static PROCESS_MANAGER: Mutex<ProcessManager> = Mutex::new(ProcessManager::n
 /// Initialize process management
 pub fn init() {
     crate::serial_println!("[PM] Process manager initialized");
-    
+
     // Create init process (PID 1)
     let mut pm = PROCESS_MANAGER.lock();
     let init_pid = pm.create_process(None);

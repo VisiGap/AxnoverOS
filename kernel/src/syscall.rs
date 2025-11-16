@@ -1,7 +1,7 @@
 use crate::process::{self, Pid};
-use x86_64::VirtAddr;
 use x86_64::registers::model_specific::{LStar, SFMask, Star};
 use x86_64::registers::rflags::RFlags;
+use x86_64::VirtAddr;
 
 /// System call numbers
 #[derive(Debug, Clone, Copy)]
@@ -40,12 +40,7 @@ impl SyscallNumber {
 }
 
 /// System call handler
-pub fn syscall_handler(
-    syscall_number: u64,
-    arg1: u64,
-    arg2: u64,
-    arg3: u64,
-) -> u64 {
+pub fn syscall_handler(syscall_number: u64, arg1: u64, arg2: u64, arg3: u64) -> u64 {
     let syscall = match SyscallNumber::from_u64(syscall_number) {
         Some(s) => s,
         None => {
@@ -109,13 +104,17 @@ fn sys_getpid() -> u64 {
 fn sys_fork() -> u64 {
     let parent_pid = process::current_pid();
     let child_pid = process::create_process(parent_pid);
-    
+
     // Register child for IPC and signals
     crate::ipc::register_process(child_pid);
     crate::signal::register_process(child_pid);
-    
-    crate::serial_println!("[SYSCALL] Fork: parent={:?}, child={}", parent_pid, child_pid);
-    
+
+    crate::serial_println!(
+        "[SYSCALL] Fork: parent={:?}, child={}",
+        parent_pid,
+        child_pid
+    );
+
     child_pid
 }
 
@@ -140,11 +139,7 @@ fn sys_receive(buffer_ptr: *mut u8, buffer_len: usize) -> u64 {
         if let Some(msg) = crate::ipc::receive_message(pid) {
             let copy_len = core::cmp::min(msg.data.len(), buffer_len);
             unsafe {
-                core::ptr::copy_nonoverlapping(
-                    msg.data.as_ptr(),
-                    buffer_ptr,
-                    copy_len
-                );
+                core::ptr::copy_nonoverlapping(msg.data.as_ptr(), buffer_ptr, copy_len);
             }
             copy_len as u64
         } else {
@@ -170,20 +165,20 @@ fn sys_kill(target: u64, signal: u32) -> u64 {
 pub fn init() {
     use x86_64::registers::model_specific::{LStar, SFMask, Star};
     use x86_64::registers::rflags::RFlags;
-    
+
     unsafe {
         // Set SYSCALL entry point
         LStar::write(VirtAddr::new(syscall_entry as u64));
-        
+
         // Set segment selectors for SYSCALL/SYSRET
         // STAR[47:32] = Kernel CS (0x08)
         // STAR[63:48] = User CS (0x18)
         Star::write(0x0008, 0x0010, 0x0018, 0x0020).unwrap();
-        
+
         // Set RFLAGS mask (clear IF and TF on syscall)
         SFMask::write(RFlags::INTERRUPT_FLAG | RFlags::TRAP_FLAG);
     }
-    
+
     crate::serial_println!("[SYSCALL] System call handler initialized");
     crate::serial_println!("[SYSCALL] SYSCALL/SYSRET enabled");
 }

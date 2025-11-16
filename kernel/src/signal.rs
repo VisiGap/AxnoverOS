@@ -1,30 +1,30 @@
+use crate::process::Pid;
 use alloc::vec::Vec;
 use spin::Mutex;
-use crate::process::Pid;
 
 /// Signal numbers (POSIX-like)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum Signal {
-    SIGHUP = 1,     // Hangup
-    SIGINT = 2,     // Interrupt
-    SIGQUIT = 3,    // Quit
-    SIGILL = 4,     // Illegal instruction
-    SIGTRAP = 5,    // Trace trap
-    SIGABRT = 6,    // Abort
-    SIGBUS = 7,     // Bus error
-    SIGFPE = 8,     // Floating point exception
-    SIGKILL = 9,    // Kill (cannot be caught)
-    SIGUSR1 = 10,   // User-defined signal 1
-    SIGSEGV = 11,   // Segmentation fault
-    SIGUSR2 = 12,   // User-defined signal 2
-    SIGPIPE = 13,   // Broken pipe
-    SIGALRM = 14,   // Alarm clock
-    SIGTERM = 15,   // Termination
-    SIGCHLD = 17,   // Child status changed
-    SIGCONT = 18,   // Continue
-    SIGSTOP = 19,   // Stop (cannot be caught)
-    SIGTSTP = 20,   // Terminal stop
+    SIGHUP = 1,   // Hangup
+    SIGINT = 2,   // Interrupt
+    SIGQUIT = 3,  // Quit
+    SIGILL = 4,   // Illegal instruction
+    SIGTRAP = 5,  // Trace trap
+    SIGABRT = 6,  // Abort
+    SIGBUS = 7,   // Bus error
+    SIGFPE = 8,   // Floating point exception
+    SIGKILL = 9,  // Kill (cannot be caught)
+    SIGUSR1 = 10, // User-defined signal 1
+    SIGSEGV = 11, // Segmentation fault
+    SIGUSR2 = 12, // User-defined signal 2
+    SIGPIPE = 13, // Broken pipe
+    SIGALRM = 14, // Alarm clock
+    SIGTERM = 15, // Termination
+    SIGCHLD = 17, // Child status changed
+    SIGCONT = 18, // Continue
+    SIGSTOP = 19, // Stop (cannot be caught)
+    SIGTSTP = 20, // Terminal stop
 }
 
 impl Signal {
@@ -103,7 +103,7 @@ impl ProcessSignals {
     pub fn set_handler(&mut self, signal: Signal, action: SignalAction) {
         // Remove existing handler
         self.handlers.retain(|h| h.signal != signal);
-        
+
         // Add new handler
         self.handlers.push(SignalHandler { signal, action });
     }

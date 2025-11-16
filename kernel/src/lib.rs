@@ -31,11 +31,11 @@ pub extern "C" fn _start() -> ! {
     // Initialize IDT
     serial_println!("[INIT] Setting up IDT...");
     interrupts::init_idt();
-    
+
     // Initialize PIC
     serial_println!("[INIT] Initializing PIC...");
     unsafe { interrupts::PICS.lock().initialize() };
-    
+
     // Enable interrupts
     x86_64::instructions::interrupts::enable();
     serial_println!("[INIT] Interrupts enabled");

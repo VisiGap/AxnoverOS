@@ -41,17 +41,14 @@ impl PhysicalMemoryManager {
     pub unsafe fn new(memory_start: PhysAddr, memory_end: PhysAddr, bitmap_addr: VirtAddr) -> Self {
         let total_frames = ((memory_end - memory_start).as_u64() / 4096) as usize;
         let bitmap_size = (total_frames + 63) / 64;
-        
-        let bitmap = core::slice::from_raw_parts_mut(
-            bitmap_addr.as_mut_ptr::<u64>(),
-            bitmap_size
-        );
-        
+
+        let bitmap = core::slice::from_raw_parts_mut(bitmap_addr.as_mut_ptr::<u64>(), bitmap_size);
+
         // Initialize bitmap - all frames free
         for entry in bitmap.iter_mut() {
             *entry = 0;
         }
-        
+
         Self {
             memory_start,
             memory_end,
@@ -59,43 +56,43 @@ impl PhysicalMemoryManager {
             bitmap,
         }
     }
-    
+
     /// Allocate a physical frame
     pub fn allocate_frame(&mut self) -> Option<PhysFrame> {
         let frame_count = ((self.memory_end - self.memory_start).as_u64() / 4096) as usize;
-        
+
         for i in 0..frame_count {
             let bitmap_index = i / 64;
             let bit_index = i % 64;
-            
+
             if self.bitmap[bitmap_index] & (1 << bit_index) == 0 {
                 // Frame is free, mark as used
                 self.bitmap[bitmap_index] |= 1 << bit_index;
-                
+
                 let frame_addr = self.memory_start + (i as u64 * 4096);
                 return Some(PhysFrame::containing_address(frame_addr));
             }
         }
-        
+
         None
     }
-    
+
     /// Free a physical frame
     pub fn free_frame(&mut self, frame: PhysFrame) {
         let frame_addr = frame.start_address();
         let frame_index = ((frame_addr - self.memory_start).as_u64() / 4096) as usize;
-        
+
         let bitmap_index = frame_index / 64;
         let bit_index = frame_index % 64;
-        
+
         self.bitmap[bitmap_index] &= !(1 << bit_index);
     }
-    
+
     /// Get total memory in bytes
     pub fn total_memory(&self) -> u64 {
         (self.memory_end - self.memory_start).as_u64()
     }
-    
+
     /// Get used memory in bytes
     pub fn used_memory(&self) -> u64 {
         let mut used_frames = 0u64;
@@ -114,7 +111,7 @@ pub struct BootInfoFrameAllocator {
 
 impl BootInfoFrameAllocator {
     /// Create a new frame allocator
-    /// 
+    ///
     /// # Safety
     /// Caller must ensure memory range is valid
     pub unsafe fn init(start_addr: u64, end_addr: u64) -> Self {

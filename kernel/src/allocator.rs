@@ -35,7 +35,7 @@ impl LinkedListAllocator {
     }
 
     /// Initialize the allocator with the given heap bounds
-    /// 
+    ///
     /// # Safety
     /// This function must be called only once and the heap bounds must be valid
     pub unsafe fn init(&self, heap_start: usize, heap_size: usize) {
@@ -48,7 +48,10 @@ impl LinkedListAllocator {
     }
 
     fn alloc_from_region(region: &Node, layout: Layout) -> Option<(*mut u8, &'static mut Node)> {
-        let alloc_start = align_up(region as *const Node as usize + core::mem::size_of::<Node>(), layout.align());
+        let alloc_start = align_up(
+            region as *const Node as usize + core::mem::size_of::<Node>(),
+            layout.align(),
+        );
         let alloc_end = alloc_start.checked_add(layout.size())?;
 
         let region_start = region as *const Node as usize;
@@ -116,7 +119,7 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
         new_node.next = None;
 
         let mut head = self.head.lock();
-        
+
         if head.is_none() {
             *head = Some(new_node);
             return;

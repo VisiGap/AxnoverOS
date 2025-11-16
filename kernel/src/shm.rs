@@ -1,7 +1,7 @@
+use crate::process::Pid;
 use alloc::vec::Vec;
 use spin::Mutex;
 use x86_64::VirtAddr;
-use crate::process::Pid;
 
 /// Shared memory segment ID
 pub type ShmId = u64;
@@ -136,15 +136,16 @@ impl ShmManager {
     }
 
     /// Attach to a shared memory segment
-    pub fn attach(&mut self, id: ShmId, pid: Pid, perms: ShmPermissions) -> Result<VirtAddr, ShmError> {
+    pub fn attach(
+        &mut self,
+        id: ShmId,
+        pid: Pid,
+        perms: ShmPermissions,
+    ) -> Result<VirtAddr, ShmError> {
         for segment in &mut self.segments {
             if segment.id == id {
                 segment.attach(pid, perms)?;
-                crate::serial_println!(
-                    "[SHM] Process {} attached to segment {}",
-                    pid,
-                    id
-                );
+                crate::serial_println!("[SHM] Process {} attached to segment {}", pid, id);
                 return Ok(segment.address);
             }
         }
@@ -156,11 +157,7 @@ impl ShmManager {
         for segment in &mut self.segments {
             if segment.id == id {
                 segment.detach(pid)?;
-                crate::serial_println!(
-                    "[SHM] Process {} detached from segment {}",
-                    pid,
-                    id
-                );
+                crate::serial_println!("[SHM] Process {} detached from segment {}", pid, id);
                 return Ok(());
             }
         }
